@@ -3,7 +3,8 @@ FROM debian:wheezy
 MAINTAINER Halid Altuner "haltuner@turksat.com.tr"
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV APP_PATH=/opt/pns
+ENV PNSCONF /opt/pns/config.ini
+ENV PYTHONPATH /opt/pns/pns
 
 # policy.d setting
 RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d
@@ -33,9 +34,13 @@ RUN git clone https://github.com/Turksat/pns.git /opt/pns/pns
 RUN pip install -r /opt/pns/pns/requirements.txt
 RUN npm install --silent -g apidoc
 RUN cd /opt/pns/pns && apidoc -i ./ -o apidoc/
-
-RUN cp /opt/pns/pns/config_sample.ini /opt/pns/config.ini
+ADD config.ini /opt/pns/config.ini
+RUN echo $PYTHONPATH
+RUN python -c "from pns.models import *; db.create_all()"
 VOLUME  ["/opt/pns"]
+
+
+
 # RabbitMQ apt-key and repository
 RUN echo "deb http://www.rabbitmq.com/debian/ testing main" > /etc/apt/sources.list.d/rabbitmq.list
 RUN wget --quiet -O - http://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add -
